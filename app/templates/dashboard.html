@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p>Import, group, and validate M3U provider credentials.</p>
+  </div>
+  <form method="post" action="/validation/validate-all">
+    <button class="primary" type="submit">Validate all active credentials</button>
+  </form>
+</section>
+
+<section class="metrics">
+  <div class="metric"><span>Providers</span><strong>{{ provider_count }}</strong></div>
+  <div class="metric"><span>Credentials</span><strong>{{ credential_count }}</strong></div>
+  <div class="metric"><span>Valid</span><strong>{{ status_counts.get("valid", 0) }}</strong></div>
+  <div class="metric"><span>Invalid</span><strong>{{ status_counts.get("invalid", 0) }}</strong></div>
+  <div class="metric"><span>Errors</span><strong>{{ status_counts.get("error", 0) }}</strong></div>
+  <div class="metric"><span>Untested</span><strong>{{ status_counts.get("untested", 0) }}</strong></div>
+</section>
+
+{% if latest_job %}
+<section class="panel">
+  <h2>Latest validation</h2>
+  <p>Job #{{ latest_job.id }} is {{ latest_job.state }}. Checked {{ latest_job.checked }} of {{ latest_job.total }} credentials.</p>
+  <a class="button" href="/validation/jobs/{{ latest_job.id }}">View job</a>
+</section>
+{% endif %}
+{% endblock %}

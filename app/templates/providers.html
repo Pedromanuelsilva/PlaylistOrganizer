@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Providers</h1>
+    <p>Active providers grouped by normalized server and port.</p>
+  </div>
+  <form method="post" action="/validation/validate-all">
+    <button class="primary" type="submit">Validate all active</button>
+  </form>
+</section>
+
+<section class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>Provider</th>
+        <th>Credentials</th>
+        <th>Valid</th>
+        <th>Validation path</th>
+        <th>Xtream API</th>
+        <th>Direct M3U</th>
+        <th>Invalid</th>
+        <th>Error</th>
+        <th>Untested</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td><a href="/providers/{{ row.provider.id }}">{{ row.provider.base_url }}</a></td>
+        <td>{{ row.credential_count }}</td>
+        <td>{{ row.counts.get("valid", 0) }}</td>
+        <td><span class="method">{{ row.validation_path }}</span></td>
+        <td>{{ row.method_counts.get("xtream_api", 0) }}</td>
+        <td>{{ row.method_counts.get("playlist_fetch", 0) }}</td>
+        <td>{{ row.counts.get("invalid", 0) }}</td>
+        <td>{{ row.counts.get("error", 0) }}</td>
+        <td>{{ row.counts.get("untested", 0) }}</td>
+        <td class="actions">
+          <form method="post" action="/providers/{{ row.provider.id }}/validate"><button type="submit">Test</button></form>
+          <form method="post" action="/providers/{{ row.provider.id }}/archive"><button type="submit">Archive</button></form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10">No providers imported yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

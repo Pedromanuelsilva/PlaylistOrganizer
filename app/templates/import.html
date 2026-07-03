@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Import links</h1>
+    <p>Paste links or upload a text/M3U file. Input is treated as one URL per line.</p>
+  </div>
+</section>
+
+<form class="panel form-stack" method="post" action="/import" enctype="multipart/form-data">
+  <label for="links">M3U links</label>
+  <textarea id="links" name="links" rows="12" spellcheck="false"></textarea>
+  <label for="upload">Upload file</label>
+  <input id="upload" name="upload" type="file" accept=".txt,.m3u,text/plain,audio/x-mpegurl">
+  <button class="primary" type="submit">Import</button>
+</form>
+
+{% if summary %}
+<section class="panel">
+  <h2>Import summary</h2>
+  <div class="summary-grid">
+    <span>Parsed</span><strong>{{ summary.parsed }}</strong>
+    <span>Providers created</span><strong>{{ summary.providers_created }}</strong>
+    <span>Providers updated</span><strong>{{ summary.providers_updated }}</strong>
+    <span>Credentials created</span><strong>{{ summary.credentials_created }}</strong>
+    <span>Credentials updated</span><strong>{{ summary.credentials_updated }}</strong>
+    <span>Skipped lines</span><strong>{{ summary.errors | length }}</strong>
+  </div>
+  {% if summary.errors %}
+  <h3>Skipped lines</h3>
+  <table>
+    <thead><tr><th>Line</th><th>Reason</th><th>Content</th></tr></thead>
+    <tbody>
+      {% for error in summary.errors %}
+      <tr><td>{{ error.line_number }}</td><td>{{ error.reason }}</td><td class="mono">{{ error.line }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

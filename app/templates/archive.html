@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Archive</h1>
+    <p>Archived providers and credentials are hidden from normal views.</p>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Archived providers</h2>
+  <table>
+    <thead><tr><th>Provider</th><th>Updated</th><th></th></tr></thead>
+    <tbody>
+      {% for provider in providers %}
+      <tr>
+        <td>{{ provider.base_url }}</td>
+        <td>{{ provider.updated_at }}</td>
+        <td class="actions">
+          <form method="post" action="/archive/providers/{{ provider.id }}/restore"><button type="submit">Restore</button></form>
+          <form method="post" action="/archive/providers/{{ provider.id }}/delete"><button class="danger" type="submit">Delete</button></form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3">No archived providers.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Archived credentials</h2>
+  <table>
+    <thead><tr><th>Provider</th><th>Username</th><th>Password</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for credential in credentials %}
+      <tr>
+        <td>{{ provider_map.get(credential.provider_id).base_url if provider_map.get(credential.provider_id) else "#" ~ credential.provider_id }}</td>
+        <td class="mono">{{ credential.username }}</td>
+        <td class="mono">{{ credential.password }}</td>
+        <td><span class="status {{ credential.status }}">{{ credential.status }}</span></td>
+        <td class="actions">
+          <form method="post" action="/archive/credentials/{{ credential.id }}/restore"><button type="submit">Restore</button></form>
+          <form method="post" action="/archive/credentials/{{ credential.id }}/delete"><button class="danger" type="submit">Delete</button></form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5">No archived credentials.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

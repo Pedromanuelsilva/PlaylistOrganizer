@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Validation job #{{ job.id }}</h1>
+    <p>{{ job.state }}. Checked {{ job.checked }} of {{ job.total }} credentials across {{ job.providers_affected }} providers.</p>
+  </div>
+  {% if job.state == "complete" and job.invalid_count > 0 %}
+  <form method="post" action="/validation/jobs/{{ job.id }}/archive-invalid">
+    <button class="danger" type="submit">Archive invalid from this run</button>
+  </form>
+  {% endif %}
+</section>
+
+<section class="metrics">
+  <div class="metric"><span>Total</span><strong>{{ job.total }}</strong></div>
+  <div class="metric"><span>Valid</span><strong>{{ job.valid_count }}</strong></div>
+  <div class="metric"><span>Invalid</span><strong>{{ job.invalid_count }}</strong></div>
+  <div class="metric"><span>Error</span><strong>{{ job.error_count }}</strong></div>
+  <div class="metric"><span>Started</span><strong>{{ job.started_at or "" }}</strong></div>
+  <div class="metric"><span>Finished</span><strong>{{ job.finished_at or "" }}</strong></div>
+</section>
+
+<section class="panel">
+  <table>
+    <thead><tr><th>Credential</th><th>Provider</th><th>Method</th><th>Status</th><th>HTTP</th><th>Message</th><th>Checked</th></tr></thead>
+    <tbody>
+      {% for run in runs %}
+      <tr>
+        <td>#{{ run.credential_id }}</td>
+        <td>#{{ run.provider_id }}</td>
+        <td>{{ run.method }}</td>
+        <td><span class="status {{ run.raw_status }}">{{ run.raw_status }}</span></td>
+        <td>{{ run.http_status or "" }}</td>
+        <td>{{ run.message }}</td>
+        <td>{{ run.checked_at }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7">No results have been recorded yet. Refresh this page while the job runs.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

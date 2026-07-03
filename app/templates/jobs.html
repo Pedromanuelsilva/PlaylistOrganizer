@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Validation jobs</h1>
+    <p>Recent credential validation runs.</p>
+  </div>
+  <form method="post" action="/validation/validate-all">
+    <button class="primary" type="submit">Validate all active</button>
+  </form>
+</section>
+
+<section class="panel">
+  <table>
+    <thead><tr><th>ID</th><th>Type</th><th>State</th><th>Checked</th><th>Valid</th><th>Invalid</th><th>Error</th><th>Started</th><th>Finished</th></tr></thead>
+    <tbody>
+      {% for job in jobs %}
+      <tr>
+        <td><a href="/validation/jobs/{{ job.id }}">#{{ job.id }}</a></td>
+        <td>{{ job.job_type }}</td>
+        <td>{{ job.state }}</td>
+        <td>{{ job.checked }} / {{ job.total }}</td>
+        <td>{{ job.valid_count }}</td>
+        <td>{{ job.invalid_count }}</td>
+        <td>{{ job.error_count }}</td>
+        <td>{{ job.started_at or "" }}</td>
+        <td>{{ job.finished_at or "" }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9">No validation jobs yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>{{ provider.base_url }}</h1>
+    <p>{{ credentials | length }} active credential combinations.</p>
+  </div>
+  <form method="post" action="/providers/{{ provider.id }}/validate">
+    <button class="primary" type="submit">Validate provider</button>
+  </form>
+</section>
+
+<section class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Password</th>
+        <th>Status</th>
+        <th>Expiry</th>
+        <th>Last checked</th>
+        <th>Account info</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for credential in credentials %}
+      <tr>
+        <td class="mono">{{ credential.username }}</td>
+        <td class="mono">{{ credential.password }}</td>
+        <td><span class="status {{ credential.status }}">{{ credential.status }}</span></td>
+        <td>{{ credential.expires_at or "" }}</td>
+        <td>{{ credential.last_checked_at or "" }}</td>
+        <td class="metadata">{{ credential.account_metadata }}</td>
+        <td class="actions">
+          <form method="post" action="/credentials/{{ credential.id }}/validate"><button type="submit">Test</button></form>
+          <form method="post" action="/credentials/{{ credential.id }}/archive"><button type="submit">Archive</button></form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7">No active credentials for this provider.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}
