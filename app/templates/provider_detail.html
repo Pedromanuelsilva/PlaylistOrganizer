@@ -52,10 +52,11 @@
 </section>
 
 {% if categories %}
+{% set selected_credential = credentials | selectattr('id', 'equalto', selected_credential_id) | first %}
 <section class="panel detail-sidebar categories-panel">
   <h2>
     Categories
-    <small class="muted">{{ credential.username }}</small>
+    <small class="muted">{{ selected_credential.username }}</small>
   </h2>
 
   {% if categories.error %}
