@@ -258,4 +258,112 @@ th {
   nav {
     flex-wrap: wrap;
   }
+
+  .detail-layout {
+    flex-direction: column;
+  }
+
+  .detail-sidebar {
+    width: 100% !important;
+  }
+}
+
+/* Two-column layout for provider detail with categories */
+.detail-layout {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.detail-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 28px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+.selected-row {
+  background: #f0fdf9;
+}
+
+/* Categories panel */
+.categories-panel h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.categories-panel h2 small {
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.categories-panel details {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.categories-panel summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+
+.categories-panel summary:hover {
+  background: #f8f9fa;
+}
+
+.cat-label {
+  font-size: 14px;
+}
+
+.cat-count {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  background: #eef2f4;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.cat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.cat-list li {
+  padding: 7px 12px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.cat-list li:hover {
+  background: #f8f9fa;
+}
+
+.cat-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.error-text {
+  color: var(--danger);
+  font-weight: 600;
 }

@@ -8,6 +8,9 @@
   <form method="post" action="/validation/validate-all">
     <button class="primary" type="submit">Validate all active</button>
   </form>
+  <form method="post" action="/providers/archive-no-valid" onsubmit="return confirm('Archive all providers with no valid credentials?')">
+    <button type="submit">Archive no-valid providers</button>
+  </form>
 </section>
 
 <section class="panel">

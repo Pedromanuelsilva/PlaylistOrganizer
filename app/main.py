@@ -3,16 +3,20 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
+
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, col, select
 
+from app.config import get_settings
 from app.database import get_session, init_db
 from app.models import Credential, CredentialStatus, JobState, Provider, ValidationJob, ValidationRun, utcnow
 from app.services.importer import import_m3u_text
 from app.services.validator import run_validation_job
+from app.services.xtream_categories import fetch_categories
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -103,6 +107,41 @@ def validate_credential_action(
     return _redirect(f"/validation/jobs/{job.id}")
 
 
+@app.get("/credentials/{credential_id}/categories")
+async def credential_categories(
+    credential_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    credential = session.get(Credential, credential_id)
+    if credential is None:
+        return _redirect("/providers")
+    provider = session.get(Provider, credential.provider_id)
+    if provider is None:
+        return _redirect("/providers")
+
+    settings = get_settings()
+    async with httpx.AsyncClient(timeout=settings.validation_timeout_seconds, follow_redirects=True) as client:
+        categories = await fetch_categories(client, provider, credential)
+
+    credentials = session.exec(
+        select(Credential)
+        .where(Credential.provider_id == provider.id, Credential.is_archived == False)
+        .order_by(Credential.username)
+    ).all()
+
+    return templates.TemplateResponse(
+        request,
+        "provider_detail.html",
+        {
+            "provider": provider,
+            "credentials": credentials,
+            "selected_credential_id": credential.id,
+            "categories": categories,
+        },
+    )
+
+
 @app.post("/providers/{provider_id}/validate")
 def validate_provider_action(
     provider_id: int,
@@ -175,6 +214,44 @@ def archive_credential(credential_id: int, session: Session = Depends(get_sessio
     session.add(credential)
     session.commit()
     return _redirect(f"/providers/{provider_id}")
+
+
+@app.post("/providers/archive-no-valid")
+def archive_providers_without_valid(session: Session = Depends(get_session)) -> RedirectResponse:
+    # Find provider IDs that have at least one valid, non-archived credential
+    valid_provider_ids = session.exec(
+        select(Credential.provider_id).distinct().where(
+            Credential.status == CredentialStatus.VALID,
+            Credential.is_archived == False,
+        )
+    ).all()
+    valid_set = set(valid_provider_ids)
+
+    # Archive all active providers without any valid credential
+    providers = session.exec(select(Provider).where(Provider.is_archived == False)).all()
+    archived_count = 0
+    for provider in providers:
+        if provider.id in valid_set:
+            continue
+        # Archive non-valid credentials on this provider
+        credentials = session.exec(
+            select(Credential).where(
+                Credential.provider_id == provider.id,
+                Credential.is_archived == False,
+                Credential.status != CredentialStatus.VALID,
+            )
+        ).all()
+        for credential in credentials:
+            credential.is_archived = True
+            credential.updated_at = utcnow()
+            session.add(credential)
+        provider.is_archived = True
+        provider.updated_at = utcnow()
+        session.add(provider)
+        archived_count += 1
+
+    session.commit()
+    return _redirect("/providers")
 
 
 @app.post("/providers/{provider_id}/archive")

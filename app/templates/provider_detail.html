@@ -10,7 +10,11 @@
   </form>
 </section>
 
-<section class="panel">
+{% if categories %}
+<div class="detail-layout">
+{% endif %}
+
+<section class="panel{% if categories %} detail-main{% endif %}">
   <table>
     <thead>
       <tr>
@@ -25,7 +29,7 @@
     </thead>
     <tbody>
       {% for credential in credentials %}
-      <tr>
+      <tr{% if selected_credential_id == credential.id %} class="selected-row"{% endif %}>
         <td class="mono">{{ credential.username }}</td>
         <td class="mono">{{ credential.password }}</td>
         <td><span class="status {{ credential.status }}">{{ credential.status }}</span></td>
@@ -34,6 +38,9 @@
         <td class="metadata">{{ credential.account_metadata }}</td>
         <td class="actions">
           <form method="post" action="/credentials/{{ credential.id }}/validate"><button type="submit">Test</button></form>
+          {% if credential.status == "valid" %}
+          <a href="/credentials/{{ credential.id }}/categories" class="button">Categories</a>
+          {% endif %}
           <form method="post" action="/credentials/{{ credential.id }}/archive"><button type="submit">Archive</button></form>
         </td>
       </tr>
@@ -43,4 +50,42 @@
     </tbody>
   </table>
 </section>
+
+{% if categories %}
+<section class="panel detail-sidebar categories-panel">
+  <h2>
+    Categories
+    <small class="muted">{{ credential.username }}</small>
+  </h2>
+
+  {% if categories.error %}
+  <p class="error-text">{{ categories.error }}</p>
+  {% else %}
+  {% for section_key, section_label in [("live", "Live"), ("vod", "VOD"), ("series", "Series")] %}
+  {% set items = categories.get(section_key, []) %}
+  <details{% if selected_credential_id %}{% if not loop.index0 %} open{% endif %}{% endif %}>
+    <summary>
+      <span class="cat-label">{{ section_label }}</span>
+      <span class="cat-count">{{ items | length }}</span>
+    </summary>
+    {% if items %}
+    <ul class="cat-list">
+      {% for item in items %}
+      <li>{{ item.category_name | default(item.category_id, true) }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No categories available.</p>
+    {% endif %}
+  </details>
+  {% endfor %}
+  {% endif %}
+
+  <div class="cat-actions">
+    <a href="/providers/{{ provider.id }}" class="button">Clear</a>
+  </div>
+</section>
+</div>
+{% endif %}
+
 {% endblock %}
