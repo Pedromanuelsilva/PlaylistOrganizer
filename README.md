@@ -25,7 +25,16 @@ Open http://127.0.0.1:8000. The SQLite database is stored in the `m3u-data` Dock
 
 The workflow in `.github/workflows/ci.yml` runs tests, validates `docker-compose.yml`, and builds the Docker image.
 
-On pushes to `main`, `master`, or version tags like `v1.0.0`, it also pushes the image to GitHub Container Registry:
+This workflow is configured for manual execution only via GitHub Actions `workflow_dispatch`. It will not run automatically on pushes or pull requests.
+
+To run it manually:
+
+1. Open the repository on GitHub.
+2. Go to the **Actions** tab.
+3. Select the `CI` workflow.
+4. Click **Run workflow** and choose the branch.
+
+On version tags like `v1.0.0`, it also pushes the image to GitHub Container Registry:
 
 ```text
 ghcr.io/<owner>/<repo>:latest

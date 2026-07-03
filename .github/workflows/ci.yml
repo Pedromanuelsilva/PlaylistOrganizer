@@ -1,13 +1,8 @@
 name: CI
 
+# This workflow is configured to run manually only.
+# It does not execute automatically on push or pull request events.
 on:
-  push:
-    branches:
-      - main
-      - master
-    tags:
-      - "v*.*.*"
-  pull_request:
   workflow_dispatch:
 
 permissions:

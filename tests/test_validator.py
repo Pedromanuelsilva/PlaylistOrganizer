@@ -71,7 +71,7 @@ async def test_playlist_fallback_success_after_non_json_api() -> None:
 
 
 @pytest.mark.asyncio
-async def test_playlist_fallback_failure() -> None:
+async def test_playlist_fallback_missing_playlist_is_invalid() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/player_api.php":
             return httpx.Response(503)
@@ -80,5 +80,5 @@ async def test_playlist_fallback_failure() -> None:
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         outcome = await validate_credential(client, provider(), credential())
 
-    assert outcome.status == CredentialStatus.ERROR
+    assert outcome.status == CredentialStatus.INVALID
     assert outcome.method == "playlist_fetch"

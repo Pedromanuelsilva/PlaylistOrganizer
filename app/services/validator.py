@@ -46,9 +46,21 @@ async def run_validation_job(job_id: int, credential_ids: list[int]) -> None:
         session.add(job)
         session.commit()
 
-    async with httpx.AsyncClient(timeout=settings.validation_timeout_seconds, follow_redirects=True) as client:
-        tasks = [_validate_one(job_id, credential_id, client, semaphore) for credential_id in credential_ids]
-        await asyncio.gather(*tasks)
+    try:
+        async with httpx.AsyncClient(timeout=settings.validation_timeout_seconds, follow_redirects=True) as client:
+            tasks = [_validate_one(job_id, credential_id, client, semaphore) for credential_id in credential_ids]
+            await asyncio.gather(*tasks)
+    except Exception as exc:
+        with Session(engine) as session:
+            job = session.get(ValidationJob, job_id)
+            if job is None:
+                return
+            job.state = JobState.FAILED
+            job.finished_at = utcnow()
+            job.message = f"Validation failed: {exc}"
+            session.add(job)
+            session.commit()
+        return
 
     with Session(engine) as session:
         job = session.get(ValidationJob, job_id)
@@ -252,13 +264,13 @@ async def _validate_with_playlist_fetch(
             message="Playlist fetch returned M3U content",
         )
 
-    if response.status_code in {401, 403}:
+    if response.status_code in {401, 403, 404, 410}:
         return ValidationOutcome(
             status=CredentialStatus.INVALID,
             method="playlist_fetch",
             success=False,
             http_status=response.status_code,
-            message="Playlist request rejected credentials",
+            message="Playlist request rejected credentials or link no longer exists",
         )
 
     return ValidationOutcome(
