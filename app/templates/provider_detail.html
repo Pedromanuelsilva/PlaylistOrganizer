@@ -35,7 +35,15 @@
         <td><span class="status {{ credential.status }}">{{ credential.status }}</span></td>
         <td>{{ credential.expires_at or "" }}</td>
         <td>{{ credential.last_checked_at or "" }}</td>
-        <td class="metadata">{{ credential.account_metadata }}</td>
+        <td class="metadata">
+          {% set m = credential.account_metadata %}
+          {% if m %}
+          <div class="acct-info">
+            {% if m.get("max_connections") %}<span>Connections: {{ m.get("active_cons", "0") }} / {{ m.max_connections }}</span>{% endif %}
+            {% if m.get("is_trial") == "1" %}<span>Trial account</span>{% endif %}
+          </div>
+          {% endif %}
+        </td>
         <td class="actions">
           <form method="post" action="/credentials/{{ credential.id }}/validate"><button type="submit">Test</button></form>
           {% if credential.status == "valid" %}

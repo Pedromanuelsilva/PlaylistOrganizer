@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title or "M3U Manager" }}</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <script>
+      // Apply saved theme before paint to avoid a flash of the wrong theme.
+      (function () {
+        var theme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
   </head>
   <body>
     <header class="topbar">
@@ -14,10 +21,24 @@
         <a href="/providers">Providers</a>
         <a href="/validation/jobs">Validation</a>
         <a href="/archive">Archive</a>
+        <button class="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">🌙</button>
       </nav>
     </header>
     <main class="page">
       {% block content %}{% endblock %}
     </main>
+    <script>
+      var toggle = document.querySelector(".theme-toggle");
+      function syncIcon() {
+        toggle.textContent = document.documentElement.getAttribute("data-theme") === "dark" ? "☀️" : "🌙";
+      }
+      syncIcon();
+      toggle.addEventListener("click", function () {
+        var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+        syncIcon();
+      });
+    </script>
   </body>
 </html>
