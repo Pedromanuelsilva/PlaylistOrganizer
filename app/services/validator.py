@@ -93,6 +93,12 @@ async def _validate_one(
                 return
 
         outcome = await validate_credential(client, provider, credential)
+        settings = get_settings()
+        for attempt in range(1, settings.validation_retries):
+            if outcome.status != CredentialStatus.ERROR:
+                break
+            await asyncio.sleep(0.5)
+            outcome = await validate_credential(client, provider, credential)
 
         with Session(engine) as session:
             credential = session.get(Credential, credential_id)
