@@ -2,7 +2,7 @@ import httpx
 import pytest
 
 from app.models import Credential, CredentialStatus, Provider
-from app.services.validator import validate_credential
+from app.services.validator import validate_credential, validate_credential_with_retry
 
 
 def provider() -> Provider:
@@ -82,3 +82,39 @@ async def test_playlist_fallback_missing_playlist_is_invalid() -> None:
 
     assert outcome.status == CredentialStatus.INVALID
     assert outcome.method == "playlist_fetch"
+
+
+@pytest.mark.asyncio
+async def test_retry_succeeds_after_transient_error() -> None:
+    api_calls = {"n": 0}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/player_api.php":
+            api_calls["n"] += 1
+            if api_calls["n"] == 1:
+                return httpx.Response(503)
+            return httpx.Response(200, json={"user_info": {"auth": 1, "status": "Active"}})
+        return httpx.Response(503)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        outcome = await validate_credential_with_retry(client, provider(), credential(), max_attempts=3)
+
+    assert outcome.status == CredentialStatus.VALID
+    assert api_calls["n"] == 2
+
+
+@pytest.mark.asyncio
+async def test_retry_gives_up_after_max_attempts() -> None:
+    api_calls = {"n": 0}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/player_api.php":
+            api_calls["n"] += 1
+        return httpx.Response(503)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        outcome = await validate_credential_with_retry(client, provider(), credential(), max_attempts=3)
+
+    assert outcome.status == CredentialStatus.ERROR
+    assert api_calls["n"] == 3
+    assert "gave up after 3 attempts" in outcome.message

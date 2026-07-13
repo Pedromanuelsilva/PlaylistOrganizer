@@ -79,13 +79,48 @@ async def run_validation_job(job_id: int, credential_ids: list[int]) -> None:
         session.commit()
 
 
+async def validate_credential_with_retry(
+    client: httpx.AsyncClient,
+    provider: Provider,
+    credential: Credential,
+    max_attempts: int,
+) -> ValidationOutcome:
+    outcome = await validate_credential(client, provider, credential)
+    attempt = 1
+    while outcome.status == CredentialStatus.ERROR and attempt < max_attempts:
+        attempt += 1
+        outcome = await validate_credential(client, provider, credential)
+    if attempt > 1 and outcome.status == CredentialStatus.ERROR:
+        outcome = ValidationOutcome(
+            status=outcome.status,
+            method=outcome.method,
+            success=outcome.success,
+            http_status=outcome.http_status,
+            message=f"{outcome.message} (gave up after {attempt} attempts)",
+            raw_status=outcome.raw_status,
+            account_metadata=outcome.account_metadata,
+            expires_at=outcome.expires_at,
+        )
+    return outcome
+
+
 async def _validate_one(
     job_id: int,
     credential_id: int,
     client: httpx.AsyncClient,
     semaphore: asyncio.Semaphore,
 ) -> None:
+    settings = get_settings()
+    max_attempts = max(1, settings.validation_retries)
     async with semaphore:
+        with Session(engine) as session:
+            credential = session.get(Credential, credential_id)
+            provider = session.get(Provider, credential.provider_id) if credential else None
+            if credential is None or provider is None:
+                return
+
+        outcome = await validate_credential_with_retry(client, provider, credential, max_attempts)
+
         with Session(engine) as session:
             credential = session.get(Credential, credential_id)
             provider = session.get(Provider, credential.provider_id) if credential else None
