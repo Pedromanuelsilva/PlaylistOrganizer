@@ -76,7 +76,77 @@ def providers_page(request: Request, session: Session = Depends(get_session)) ->
     providers = session.exec(
         select(Provider).where(Provider.is_archived == False).order_by(Provider.host, Provider.port)
     ).all()
-    rows = [_provider_row(session, provider) for provider in providers]
+
+    provider_ids = [p.id for p in providers]
+    if not provider_ids:
+        return templates.TemplateResponse(request, "providers.html", {"rows": []})
+
+    # Fetch all credentials for these providers in one query
+    credentials = session.exec(
+        select(Credential)
+        .where(Credential.provider_id.in_(provider_ids), Credential.is_archived == False)
+        .order_by(Credential.provider_id, Credential.username)
+    ).all()
+
+    # Group credentials by provider
+    creds_by_provider: dict[int, list[Credential]] = {}
+    for cred in credentials:
+        creds_by_provider.setdefault(cred.provider_id, []).append(cred)
+
+    # Fetch latest valid ValidationRun for each valid credential in a single query
+    valid_cred_ids = [c.id for c in credentials if c.status == CredentialStatus.VALID]
+    latest_valid_runs: dict[int, ValidationRun] = {}
+    if valid_cred_ids:
+        from sqlalchemy import func
+        from sqlmodel import col
+
+        # Subquery: latest checked_at per credential for valid runs
+        latest_subq = (
+            select(
+                ValidationRun.credential_id,
+                func.max(ValidationRun.checked_at).label("max_checked"),
+            )
+            .where(
+                ValidationRun.credential_id.in_(valid_cred_ids),
+                ValidationRun.raw_status == CredentialStatus.VALID.value,
+            )
+            .group_by(ValidationRun.credential_id)
+            .subquery()
+        )
+
+        # Join back to get the full ValidationRun rows
+        latest_runs = session.exec(
+            select(ValidationRun).join(
+                latest_subq,
+                (ValidationRun.credential_id == latest_subq.c.credential_id)
+                & (ValidationRun.checked_at == latest_subq.c.max_checked),
+            )
+        ).all()
+        latest_valid_runs = {run.credential_id: run for run in latest_runs}
+
+    rows = []
+    for provider in providers:
+        prov_creds = creds_by_provider.get(provider.id, [])
+        counts = Counter(cred.status for cred in prov_creds)
+
+        method_counts: Counter = Counter()
+        for cred in prov_creds:
+            if cred.status != CredentialStatus.VALID:
+                continue
+            run = latest_valid_runs.get(cred.id)
+            if run is None:
+                method_counts["unknown"] += 1
+            else:
+                method_counts[run.method] += 1
+
+        rows.append({
+            "provider": provider,
+            "credential_count": len(prov_creds),
+            "counts": counts,
+            "method_counts": method_counts,
+            "validation_path": _validation_path_label(method_counts),
+        })
+
     return templates.TemplateResponse(request, "providers.html", {"rows": rows})
 
 
@@ -218,7 +288,6 @@ def archive_credential(credential_id: int, session: Session = Depends(get_sessio
 
 @app.post("/providers/archive-no-valid")
 def archive_providers_without_valid(session: Session = Depends(get_session)) -> RedirectResponse:
-    # Find provider IDs that have at least one valid, non-archived credential
     valid_provider_ids = session.exec(
         select(Credential.provider_id).distinct().where(
             Credential.status == CredentialStatus.VALID,
@@ -227,18 +296,25 @@ def archive_providers_without_valid(session: Session = Depends(get_session)) -> 
     ).all()
     valid_set = set(valid_provider_ids)
 
-    # Archive all active providers without any valid credential
+    untested_provider_ids = session.exec(
+        select(Credential.provider_id).distinct().where(
+            Credential.status == CredentialStatus.UNTESTED,
+            Credential.is_archived == False,
+        )
+    ).all()
+    untested_set = set(untested_provider_ids)
+
     providers = session.exec(select(Provider).where(Provider.is_archived == False)).all()
     archived_count = 0
     for provider in providers:
         if provider.id in valid_set:
             continue
-        # Archive non-valid credentials on this provider
+        if provider.id in untested_set:
+            continue
         credentials = session.exec(
             select(Credential).where(
                 Credential.provider_id == provider.id,
                 Credential.is_archived == False,
-                Credential.status != CredentialStatus.VALID,
             )
         ).all()
         for credential in credentials:

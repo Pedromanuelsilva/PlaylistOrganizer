@@ -94,6 +94,44 @@ a:hover {
   text-decoration: underline;
 }
 
+<<<<<<< HEAD
+=======
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 64px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.brand {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+nav {
+  display: flex;
+  gap: 18px;
+}
+
+.page {
+  width: min(100%, calc(100% - 32px));
+  margin: 28px auto 64px;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+>>>>>>> b1facc567f72f8c597a1e5a6d41e8af629e9f060
 h1,
 h2,
 h3,
