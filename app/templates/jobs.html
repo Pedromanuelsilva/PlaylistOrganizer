@@ -18,7 +18,7 @@
       <tr>
         <td><a href="/validation/jobs/{{ job.id }}">#{{ job.id }}</a></td>
         <td>{{ job.job_type }}</td>
-        <td>{{ job.state }}</td>
+        <td><span class="badge state-{{ job.state }}">{{ job.state }}</span></td>
         <td>{{ job.checked }} / {{ job.total }}</td>
         <td>{{ job.valid_count }}</td>
         <td>{{ job.invalid_count }}</td>

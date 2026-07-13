@@ -3,7 +3,16 @@
 <section class="page-head">
   <div>
     <h1>Validation job #{{ job.id }}</h1>
-    <p>{{ job.state }}. Checked {{ job.checked }} of {{ job.total }} credentials across {{ job.providers_affected }} providers.</p>
+    <p>
+      <span class="badge state-{{ job.state }}">{{ job.state }}</span>
+      &nbsp;Checked {{ job.checked }} of {{ job.total }} credentials across {{ job.providers_affected }} provider(s).
+    </p>
+    {% if job.state in ("running", "queued") %}
+    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ job.total }}" aria-valuenow="{{ job.checked }}" style="margin-top: 14px; max-width: 420px;">
+      <span style="width: {% if job.total %}{{ (job.checked * 100 / job.total) | round }}{% else %}0{% endif %}%;"></span>
+    </div>
+    <p class="muted" style="margin-top: 6px; font-size: 13px;">Refresh to update progress.</p>
+    {% endif %}
   </div>
   {% if job.state == "complete" and job.invalid_count > 0 %}
   <form method="post" action="/validation/jobs/{{ job.id }}/archive-invalid">
@@ -17,8 +26,8 @@
   <div class="metric"><span>Valid</span><strong>{{ job.valid_count }}</strong></div>
   <div class="metric"><span>Invalid</span><strong>{{ job.invalid_count }}</strong></div>
   <div class="metric"><span>Error</span><strong>{{ job.error_count }}</strong></div>
-  <div class="metric"><span>Started</span><strong>{{ job.started_at or "" }}</strong></div>
-  <div class="metric"><span>Finished</span><strong>{{ job.finished_at or "" }}</strong></div>
+  <div class="metric"><span>Started</span><strong style="font-size: 16px;">{{ job.started_at or "—" }}</strong></div>
+  <div class="metric"><span>Finished</span><strong style="font-size: 16px;">{{ job.finished_at or "—" }}</strong></div>
 </section>
 
 <section class="panel">

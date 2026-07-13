@@ -1,13 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="page-head">
-  <div>
-    <h1>Dashboard</h1>
-    <p>Import, group, and validate M3U provider credentials.</p>
+<section class="panel" style="background: linear-gradient(135deg, var(--panel), var(--panel-2));">
+  <div class="page-head" style="margin-bottom: 0;">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Import, group, and validate M3U provider credentials from one place.</p>
+    </div>
+    <div class="actions">
+      <a class="button" href="/import">Import links</a>
+      <form method="post" action="/validation/validate-all">
+        <button class="primary" type="submit">Validate all active</button>
+      </form>
+    </div>
   </div>
-  <form method="post" action="/validation/validate-all">
-    <button class="primary" type="submit">Validate all active credentials</button>
-  </form>
 </section>
 
 <section class="metrics">
@@ -22,8 +27,27 @@
 {% if latest_job %}
 <section class="panel">
   <h2>Latest validation</h2>
-  <p>Job #{{ latest_job.id }} is {{ latest_job.state }}. Checked {{ latest_job.checked }} of {{ latest_job.total }} credentials.</p>
-  <a class="button" href="/validation/jobs/{{ latest_job.id }}">View job</a>
+  <p>
+    Job #{{ latest_job.id }} ·
+    <span class="badge state-{{ latest_job.state }}">{{ latest_job.state }}</span>
+  </p>
+  <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ latest_job.total }}" aria-valuenow="{{ latest_job.checked }}">
+    <span style="width: {% if latest_job.total %}{{ (latest_job.checked * 100 / latest_job.total) | round }}{% else %}0{% endif %}%;"></span>
+  </div>
+  <div class="progress-meta">
+    <span>Checked {{ latest_job.checked }} of {{ latest_job.total }}</span>
+    <a href="/validation/jobs/{{ latest_job.id }}">View job →</a>
+  </div>
+</section>
+{% else %}
+<section class="panel">
+  <div class="empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+    </svg>
+    <p>No validation runs yet. Import some credentials, then validate them to see results here.</p>
+    <a class="button primary" href="/import">Import links</a>
+  </div>
 </section>
 {% endif %}
 {% endblock %}

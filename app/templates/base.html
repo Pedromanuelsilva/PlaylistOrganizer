@@ -15,30 +15,52 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/">M3U Manager</a>
+      <a class="brand" href="/">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h16M4 12h10M4 18h7"/>
+            <circle cx="19" cy="15" r="3"/>
+          </svg>
+        </span>
+        M3U Manager
+      </a>
       <nav>
-        <a href="/import">Import</a>
-        <a href="/providers">Providers</a>
-        <a href="/validation/jobs">Validation</a>
-        <a href="/archive">Archive</a>
+        <a href="/import" data-path="/import">Import</a>
+        <a href="/providers" data-path="/providers">Providers</a>
+        <a href="/validation/jobs" data-path="/validation">Validation</a>
+        <a href="/archive" data-path="/archive">Archive</a>
         <button class="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">🌙</button>
       </nav>
     </header>
     <main class="page">
       {% block content %}{% endblock %}
     </main>
+    <footer class="footer">
+      <span>Local M3U Credential Manager</span>
+      <span>Single-user · runs on your machine</span>
+    </footer>
     <script>
-      var toggle = document.querySelector(".theme-toggle");
-      function syncIcon() {
-        toggle.textContent = document.documentElement.getAttribute("data-theme") === "dark" ? "☀️" : "🌙";
-      }
-      syncIcon();
-      toggle.addEventListener("click", function () {
-        var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
-        document.documentElement.setAttribute("data-theme", next);
-        localStorage.setItem("theme", next);
+      (function () {
+        var path = window.location.pathname;
+        document.querySelectorAll("nav a[data-path]").forEach(function (link) {
+          var p = link.getAttribute("data-path");
+          if (p === "/validation" ? path.indexOf(p) === 0 : path === p || path.indexOf(p + "/") === 0) {
+            link.classList.add("active");
+          }
+        });
+
+        var toggle = document.querySelector(".theme-toggle");
+        function syncIcon() {
+          toggle.textContent = document.documentElement.getAttribute("data-theme") === "dark" ? "☀️" : "🌙";
+        }
         syncIcon();
-      });
+        toggle.addEventListener("click", function () {
+          var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+          document.documentElement.setAttribute("data-theme", next);
+          localStorage.setItem("theme", next);
+          syncIcon();
+        });
+      })();
     </script>
   </body>
 </html>
